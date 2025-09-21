@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zomato Chatbot</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        input, select { margin: 5px 0; padding: 5px; width: 200px; }
+        table { border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🍽️ Zomato Chatbot</h1>
+    <form method="POST">
+        <input type="text" name="cuisine" placeholder="Cuisine (e.g., Italian)">
+        <input type="text" name="city" placeholder="City">
+        <select name="price">
+            <option value="">Price Bucket</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+        </select>
+        <input type="number" step="0.1" name="min_rating" placeholder="Minimum Rating (0-5)">
+        <select name="table_booking">
+            <option value="">Table Booking?</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+        <select name="online_delivery">
+            <option value="">Online Delivery?</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+        <button type="submit">Find Restaurants</button>
+    </form>
+
+    {% if results is not none %}
+        <h2>Top Restaurants:</h2>
+        {% if results.empty %}
+            <p>No restaurants found for your criteria.</p>
+        {% else %}
+            <table>
+                <tr>
+                    {% for col in results.columns %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                </tr>
+                {% for row in results.values %}
+                    <tr>
+                        {% for val in row %}
+                            <td>{{ val }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        {% endif %}
+    {% endif %}
+</body>
+</html>
