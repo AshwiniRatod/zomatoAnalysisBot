@@ -1,49 +1,26 @@
-import os
+# FeatureEngineering.py
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 
-def preprocess_zomato_data(zomato_file, country_file, output_file="cleaned_zomato.csv"):
-    # Load the country code Excel file
+def preprocess_zomato_data(zomato_file, country_file):
     country_df = pd.read_excel(country_file)
-
-    # Load the Zomato CSV file
     zomato_df = pd.read_csv(zomato_file, encoding='latin-1')
-
-    # Merge datasets on Country Code
     df = zomato_df.merge(country_df, how='left', on='Country Code')
-
-    # Remove duplicates
     df = df.drop_duplicates()
-
-    # Fill missing Cuisines
     df['Cuisines'] = df['Cuisines'].fillna("Not Available")
 
-    # Map binary columns to 0/1
     binary_cols = ['Has Table booking', 'Has Online delivery', 'Is delivering now']
     for col in binary_cols:
         df[col] = df[col].map({'Yes': 1, 'No': 0})
 
-    # Map rating text to numeric score
-    rating_map = {
-        "Excellent": 5,
-        "Very Good": 4,
-        "Good": 3,
-        "Average": 2,
-        "Poor": 1
-    }
+    rating_map = {"Excellent": 5, "Very Good": 4, "Good": 3, "Average": 2, "Poor": 1}
     df["Rating score"] = df["Rating text"].map(rating_map)
 
-    # Extract primary cuisine
-    df['Primary Cuisine'] = df['Cuisines'].apply(lambda x: x.split(",")[0] if x != "Not Available" else "Not Available")
-
-    # Rename country column
+    df['Primary Cuisine'] = df['Cuisines'].apply(
+        lambda x: x.split(",")[0] if x != "Not Available" else "Not Available"
+    )
     df.rename(columns={"Country": "Country Name"}, inplace=True)
-
-    # Normalize currency (optional)
     df['Currency'] = df['Currency'].str.strip()
 
-    # Define price bucket
     def price_bucket(cost):
         if cost < 500:
             return "Low"
@@ -53,39 +30,28 @@ def preprocess_zomato_data(zomato_file, country_file, output_file="cleaned_zomat
             return "High"
 
     df['Price Bucket'] = df['Average Cost for two'].apply(price_bucket)
-
-    # Calculate popularity score
     df['Popularity Score'] = df['Votes'] * df['Aggregate rating']
-
-    # Save to CSV
-    df.to_csv(output_file, index=False)
-    print(f"✅ Preprocessing complete! Cleaned dataset saved as {output_file}")
-
     return df
 
-def filter_restaurants(df, cuisine=None, city=None, price=None, min_rating=0, table_booking=None, online_delivery=None):
+
+def filter_restaurants(
+    df, cuisine=None, city=None, price=None,
+    min_rating=0, table_booking=None, online_delivery=None
+):
     results = df.copy()
-    
     if cuisine:
         results = results[results['Primary Cuisine'].str.contains(cuisine, case=False, na=False)]
     if city:
         results = results[results['City'].str.contains(city, case=False, na=False)]
     if price:
         results = results[results['Price Bucket'].str.lower() == price.lower()]
-    
+
     results = results[results['Aggregate rating'] >= min_rating]
-    
+
     if table_booking is not None:
         results = results[results['Has Table booking'] == table_booking]
     if online_delivery is not None:
         results = results[results['Has Online delivery'] == online_delivery]
-    
-    results = results.sort_values(by='Popularity Score', ascending=False)
-    
-    return results[['Restaurant Name','City','Primary Cuisine','Price Bucket','Aggregate rating','Votes']].head(10)
 
-
-
-# Run the pipeline
-cleaned_df = preprocess_zomato_data("data/zomato.csv", "data/Country-Code.xlsx")
-print(cleaned_df.head())
+    return results[['Restaurant Name', 'City', 'Primary Cuisine', 
+                    'Price Bucket', 'Aggregate rating', 'Votes']].head(10)
